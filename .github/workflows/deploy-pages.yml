@@ -43,6 +43,7 @@ jobs:
           cp dist/index.html dist/results/module-quick
           cp dist/index.html dist/mistakes
           cp dist/index.html dist/bookmarks
+          cp dist/index.html dist/admin
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5

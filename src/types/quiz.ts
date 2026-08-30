@@ -13,6 +13,8 @@ export interface QuizQuestion {
   question: string;
   image?: string;
   images?: string[];
+  sourcePages?: number[];
+  fullImages?: string[];
   answerImage?: string;
   options?: QuestionOption[];
   correctAnswers?: string[];
@@ -30,9 +32,14 @@ export type Answer = string[];
 
 export interface WrongReviewItem {
   questionId: string;
+  questionNumber?: number;
+  sourcePages?: number[];
+  type?: string;
   selectedAnswer: Answer;
   correctAnswer: Answer;
-  attemptedAt: string;
+  questionImages?: string[];
+  explanation?: string;
+  createdAt: string;
 }
 
 export interface StoredResults {

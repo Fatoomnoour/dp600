@@ -116,6 +116,7 @@ export default function Home() {
             📕 مراجعة الأخطاء {wrong.length > 0 && <span className="num-ltr" style={{ color: "var(--red)", fontWeight: 900 }}>({wrong.length})</span>}
           </button>
           <button className="btn btn-ghost" style={{ padding: "1rem" }} onClick={() => nav("/bookmarks")}>⭐ المفضلة</button>
+          <button className="btn btn-ghost" style={{ padding: "1rem" }} onClick={() => nav("/admin")}>🛠 فهرس الأسئلة (Debug)</button>
         </div>
       </div>
     </div>

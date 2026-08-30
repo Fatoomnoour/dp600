@@ -94,3 +94,14 @@ t("data: no duplicate option texts per question", QUESTIONS.every(q => { const t
 
 console.log("\n" + (failures === 0 ? "ALL TESTS PASSED" : failures + " TEST(S) FAILED"));
 process.exit(failures === 0 ? 0 : 1);
+// --- visual bank integrity ---
+const fs = await import("fs");
+t("bank: every q has sourcePages", QUESTIONS.every(q => q.sourcePages && q.sourcePages.length > 0));
+t("bank: every q has cropped images", QUESTIONS.every(q => q.images && q.images.length > 0));
+t("bank: images exist on disk", QUESTIONS.every(q => q.images.every(p => fs.existsSync("public/" + p.replace("/dp600/", "")))));
+const idx = JSON.parse(fs.readFileSync("public/question-index.json", "utf8"));
+t("bank: index has 102 entries", idx.length === 102);
+t("bank: index ids unique", new Set(idx.map(e => e.id)).size === 102);
+t("bank: index aligns with data", idx.every(e => { const q = QUESTIONS.find(x => x.id === e.id); return q && JSON.stringify(q.sourcePages) === JSON.stringify(e.sourcePages); }));
+t("wrong: rich fields saved", (() => { clearWrong(); addWrong({ questionId: "qX", questionNumber: 10, sourcePages: [12,13], type: "multiple", selectedAnswer: ["a"], correctAnswer: ["b"], questionImages: ["/dp600/x.png"], explanation: "why" }); const w = loadWrong()[0]; return w && w.questionNumber === 10 && w.sourcePages.length === 2 && w.explanation === "why" && !!w.createdAt; })());
+clearWrong();

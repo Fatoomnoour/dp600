@@ -55,11 +55,11 @@ export function loadWrong(): WrongReviewItem[] {
 }
 
 /** Add a wrong question idempotently: keep the FIRST attempt only. */
-export function addWrong(item: Omit<WrongReviewItem, "attemptedAt"> & { attemptedAt?: string }) {
+export function addWrong(item: Omit<WrongReviewItem, "createdAt"> & { createdAt?: string }) {
   const list = loadWrong();
   const exists = list.some((x) => x.questionId === item.questionId);
   if (!exists) {
-    list.push({ ...item, attemptedAt: item.attemptedAt ?? new Date().toISOString() });
+    list.push({ ...item, createdAt: item.createdAt ?? new Date().toISOString() });
     write(WKEY, list);
   }
 }

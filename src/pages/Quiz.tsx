@@ -128,8 +128,13 @@ export default function Quiz() {
       sounds.wrong();
       addWrong({
         questionId: q.id,
+        questionNumber: q.number,
+        sourcePages: q.sourcePages ?? [],
+        type: q.type,
         selectedAnswer: ans,
         correctAnswer: q.correctAnswers ?? [],
+        questionImages: q.images ?? [],
+        explanation: q.explanation ?? "",
       });
     }
   }

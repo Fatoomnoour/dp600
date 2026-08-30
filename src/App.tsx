@@ -4,6 +4,7 @@ import Quiz from "@/pages/Quiz";
 import Results from "@/pages/Results";
 import Mistakes from "@/pages/Mistakes";
 import Bookmarks from "@/pages/Bookmarks";
+import Admin from "@/pages/Admin";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/results/:moduleId" component={Results} />
         <Route path="/mistakes" component={Mistakes} />
         <Route path="/bookmarks" component={Bookmarks} />
+        <Route path="/admin" component={Admin} />
         <Route component={NotFound} />
       </Switch>
     </Wouter>
