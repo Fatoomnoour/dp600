@@ -38,6 +38,7 @@ jobs:
           mkdir -p dist/quiz dist/results
           cp dist/index.html dist/quiz/module-full
           cp dist/index.html dist/quiz/module-quick
+          cp dist/index.html dist/quiz/module-wrong
           cp dist/index.html dist/results/module-full
           cp dist/index.html dist/results/module-quick
           cp dist/index.html dist/mistakes
