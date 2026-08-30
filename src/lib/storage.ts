@@ -36,20 +36,19 @@ export function saveBookmarks(b: StoredBookmarks) {
   }
 }
 
+export type QuizMode = "training" | "exam";
+
 export interface AppConfig {
   sound: boolean;
   timerMinutes: number;
+  mode: QuizMode;
 }
 
 export function loadConfig(): AppConfig {
   try {
-    return {
-      sound: true,
-      timerMinutes: 100,
-      ...JSON.parse(localStorage.getItem(CKEY) ?? "{}"),
-    };
+    return { sound: true, timerMinutes: 100, mode: "training", ...JSON.parse(localStorage.getItem(CKEY) ?? "{}") };
   } catch {
-    return { sound: true, timerMinutes: 100 };
+    return { sound: true, timerMinutes: 100, mode: "training" };
   }
 }
 

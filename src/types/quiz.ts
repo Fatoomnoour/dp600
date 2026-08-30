@@ -36,7 +36,16 @@ export interface QuizModule {
   questionNumbers: number[];
 }
 
-/* Module store: questionId -> Answer, plus reserved meta keys */
-export type ModuleStore = Record<string, unknown> & { [k: string]: any };
+export interface ModuleMeta {
+  _idx?: number;
+  _graded?: Record<string, boolean>;
+  _seconds?: number;
+  _mode?: "training" | "exam";
+  _submitted?: boolean;
+  _score?: number;
+  _total?: number;
+}
+
+export type ModuleStore = Record<string, unknown> & { [k: string]: any } & ModuleMeta;
 export interface StoredAnswers { [moduleId: string]: ModuleStore; }
 export interface StoredBookmarks { [questionId: string]: boolean; }

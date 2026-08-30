@@ -31,8 +31,15 @@ jobs:
         env:
           BASE_PATH: /dp600/
         run: npm run build
-      - name: Add SPA fallback
-        run: cp dist/index.html dist/404.html
+
+      - name: SPA fallback + deep route files (direct-open support)
+        run: |
+          cp dist/index.html dist/404.html
+          for p in quiz/module-full quiz/module-quick results/module-full results/module-quick; do
+            mkdir -p "dist/$p"
+            cp dist/index.html "dist/$p/index.html"
+          done
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload website
