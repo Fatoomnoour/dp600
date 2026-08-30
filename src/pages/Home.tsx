@@ -1,25 +1,27 @@
 import { useLocation } from "wouter";
 import { TopBar, Chip } from "@/components/Navbar";
 import { QUESTIONS } from "@/data/questions";
-import { loadAnswers, loadBookmarks, loadConfig, saveConfig } from "@/lib/storage";
+import { loadAnswers, loadBookmarks, loadWrong, loadMode, saveMode, loadResults } from "@/lib/storage";
 import type { QuizMode } from "@/lib/storage";
 import { useState } from "react";
 
 const MODS = [
-  { id: "module-full", title: "الامتحان الكامل", desc: "جميع الأسئلة الـ102 بترتيب الأصل — محاكاة فعلية لامتحان DP-600", minutes: 100, icon: "🏆" },
+  { id: "module-full", title: "الامتحان الكامل", desc: "جميع الأسئلة الـ102 بترتيب الأصل — تدريب تدريجي شامل", minutes: 100, icon: "🏆" },
   { id: "module-quick", title: "مراجعة سريعة", desc: "20 سؤالاً عشوائياً مع مؤقت قصير — لمراجعة يومية سريعة", minutes: 15, icon: "⚡" },
 ];
 
 const MODES: { id: QuizMode; title: string; desc: string; icon: string; badge?: string }[] = [
-  { id: "training", title: "وضع التدريب", desc: "تصحيح فوري مع شرح بعد كل سؤال", icon: "🎯", badge: "الافتراضي" },
+  { id: "training", title: "وضع التدريب", desc: "تصحيح فوري مع شرح بعد كل سؤال + حفظ الأخطاء تلقائياً", icon: "🎯", badge: "الافتراضي" },
   { id: "exam", title: "وضع المحاكاة", desc: "تظهر النتيجة في النهاية فقط", icon: "⏱️" },
 ];
 
 export default function Home() {
   const [, nav] = useLocation();
-  const [cfg, setCfg] = useState(loadConfig);
+  const [mode, setMode] = useState<QuizMode>(() => loadMode() ?? "training");
   const answers = loadAnswers();
   const bookmarks = loadBookmarks();
+  const wrong = loadWrong();
+  const results = loadResults()[0];
   const done = Object.values(answers).filter((m) => (m as { _submitted?: boolean })._submitted).length;
   const attempted = QUESTIONS.filter((q) => {
     const m = answers["module-full"] as { [k: string]: unknown } | undefined;
@@ -27,21 +29,13 @@ export default function Home() {
     return Array.isArray(a) && a.length > 0;
   }).length;
 
-  const pickMode = (mode: QuizMode) => {
-    const next = { ...cfg, mode };
-    setCfg(next);
-    saveConfig(next);
-  };
-
-  const start = (id: string) => {
-    saveConfig(cfg);
-    nav(`/quiz/${id}`);
-  };
+  const pickMode = (m: QuizMode) => { setMode(m); saveMode(m); };
+  const start = (id: string) => nav(`/quiz/${id}`);
 
   const stats = [
     { label: "إجمالي الأسئلة", value: QUESTIONS.length, color: "var(--violet2)" },
     { label: "أسئلة أجبت عنها", value: attempted, color: "var(--teal)" },
-    { label: "محاولات أُرسِلت", value: done, color: "var(--amber)" },
+    { label: "أخطاء للمراجعة", value: wrong.length, color: "var(--red)" },
     { label: "مفضلة", value: Object.keys(bookmarks).length, color: "#ec4899" },
   ];
 
@@ -58,6 +52,11 @@ export default function Home() {
           <p style={{ margin: "0.4rem 0 0", color: "#d8c7ff", lineHeight: 1.7 }}>
             تحضير تفاعلي لشهادة <b>Microsoft Fabric Analytics Engineer</b> — 102 سؤالاً تغطي النمذجة الدلالية، Lakehouse، تحويلات البيانات، الذكاء في Fabric، والأمان.
           </p>
+          {results && (
+            <p style={{ margin: "0.5rem 0 0", fontSize: "0.85rem", color: "#7ee8fa" }}>
+              آخر نتيجة: <b className="num-ltr">{results.pct}%</b> ({results.score}/{results.total}) — {new Date(results.at).toLocaleString("ar-EG")}
+            </p>
+          )}
           <p style={{ margin: "0.6rem 0 0", color: "#ffe4a3", fontSize: "0.85rem" }}>
             ⚠ المحتوى للمراجعة التعليمية ولا يمثل أسئلة الامتحان الرسمية. المرجع:{" "}
             <a href="https://learn.microsoft.com/credentials/certifications/fabric-analytics-engineer/" target="_blank" rel="noreferrer" style={{ color: "#7ee8fa" }}>Microsoft Learn</a>
@@ -73,21 +72,16 @@ export default function Home() {
           ))}
         </div>
 
-        {/* mode selection */}
         <div className="card">
           <div style={{ fontWeight: 800, marginBottom: "0.7rem" }}>اختر وضع الدراسة</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: "0.8rem" }}>
             {MODES.map((m) => {
-              const active = cfg.mode === m.id;
+              const active = mode === m.id;
               return (
                 <button
-                  key={m.id}
-                  onClick={() => pickMode(m.id)}
-                  className="opt"
+                  key={m.id} onClick={() => pickMode(m.id)} className="opt"
                   style={{
-                    flexDirection: "column",
-                    alignItems: "flex-start",
-                    gap: "0.3rem",
+                    position: "relative", flexDirection: "column", alignItems: "flex-start", gap: "0.3rem",
                     borderColor: active ? "var(--violet)" : "var(--line)",
                     background: active ? "rgba(124,58,237,0.16)" : "var(--panel)",
                     boxShadow: active ? "0 0 0 2px rgba(124,58,237,0.35)" : undefined,
@@ -104,7 +98,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* methods */}
         <div style={{ display: "grid", gap: "0.9rem" }}>
           {MODS.map((m) => (
             <div key={m.id} className="card" style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
@@ -112,39 +105,16 @@ export default function Home() {
               <div style={{ flex: 1, minWidth: "200px" }}>
                 <div style={{ fontWeight: 800, fontSize: "1.05rem" }}>{m.title}</div>
                 <div style={{ color: "var(--mut)", fontSize: "0.88rem", lineHeight: 1.6 }}>{m.desc}</div>
-                <div style={{ fontSize: "0.8rem", color: "var(--teal)", fontWeight: 700 }}>⏱ {cfg.timerMinutes} دقيقة</div>
               </div>
               <button className="btn btn-violet" onClick={() => start(m.id)}>ابدأ الآن</button>
             </div>
           ))}
         </div>
 
-        <div className="card">
-          <div style={{ fontWeight: 800, marginBottom: "0.7rem" }}>الإعدادات</div>
-          <label style={{ display: "flex", alignItems: "center", gap: "0.7rem", flexWrap: "wrap", fontSize: "0.92rem" }}>
-            مدة الامتحان بالدقائق:
-            <input
-              type="number" min={5} max={300} value={cfg.timerMinutes}
-              onChange={(e) => {
-                const v = Math.max(5, Math.min(300, Number(e.target.value) || 100));
-                const next = { ...cfg, timerMinutes: v };
-                setCfg(next);
-                saveConfig(next);
-              }}
-              style={{ width: "90px", padding: "0.4rem", borderRadius: "0.5rem", border: "1px solid var(--line)", background: "var(--panel2)", color: "var(--txt)", fontFamily: "inherit" }}
-            />
-          </label>
-          <label style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginTop: "0.7rem", fontSize: "0.92rem", cursor: "pointer" }}>
-            <input type="checkbox" checked={cfg.sound} onChange={(e) => {
-              const next = { ...cfg, sound: e.target.checked };
-              setCfg(next);
-              saveConfig(next);
-            }} /> تفعيل الأصوات
-          </label>
-        </div>
-
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "0.8rem" }}>
-          <button className="btn btn-ghost" style={{ padding: "1rem" }} onClick={() => nav("/mistakes")}>📕 مراجعة الأخطاء</button>
+          <button className="btn btn-ghost" style={{ padding: "1rem", borderColor: wrong.length ? "rgba(248,113,113,0.5)" : undefined }} onClick={() => nav("/mistakes")}>
+            📕 مراجعة الأخطاء {wrong.length > 0 && <span className="num-ltr" style={{ color: "var(--red)", fontWeight: 900 }}>({wrong.length})</span>}
+          </button>
           <button className="btn btn-ghost" style={{ padding: "1rem" }} onClick={() => nav("/bookmarks")}>⭐ المفضلة</button>
         </div>
       </div>

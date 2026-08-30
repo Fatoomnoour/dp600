@@ -28,24 +28,35 @@ export interface QuizQuestion {
 
 export type Answer = string[];
 
-export interface QuizModule {
-  id: string;
-  title: string;
-  description: string;
-  minutes: number;
-  questionNumbers: number[];
+export interface WrongReviewItem {
+  questionId: string;
+  selectedAnswer: Answer;
+  correctAnswer: Answer;
+  attemptedAt: string;
 }
 
-export interface ModuleMeta {
-  _idx?: number;
-  _graded?: Record<string, boolean>;
-  _seconds?: number;
-  _mode?: "training" | "exam";
-  _submitted?: boolean;
-  _score?: number;
-  _total?: number;
+export interface StoredResults {
+  moduleId: string;
+  score: number;
+  total: number;
+  pct: number;
+  at: string;
 }
 
-export type ModuleStore = Record<string, unknown> & { [k: string]: any } & ModuleMeta;
-export interface StoredAnswers { [moduleId: string]: ModuleStore; }
-export interface StoredBookmarks { [questionId: string]: boolean; }
+export interface CurrentPosition {
+  moduleId: string;
+  idx: number;
+}
+
+export interface ModuleStore {
+  [key: string]: any;
+}
+export interface StoredAnswers {
+  [moduleId: string]: ModuleStore;
+}
+
+export interface StoredBookmarks {
+  [questionId: string]: boolean;
+}
+
+export type AnswerMap = Record<string, Answer>;

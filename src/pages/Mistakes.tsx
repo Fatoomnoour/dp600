@@ -1,53 +1,90 @@
+import { useState } from "react";
+import { useLocation } from "wouter";
 import { TopBar, Chip } from "@/components/Navbar";
 import { allQuestions } from "@/lib/loadQuestions";
-import { loadAnswers } from "@/lib/storage";
-import { gradeQuestion } from "@/lib/grading";
-import { useMemo } from "react";
-import type { Answer } from "@/types/quiz";
+import { loadWrong, removeWrong, clearWrong } from "@/lib/storage";
+import { correctAnswerText, selectedAnswerText } from "@/lib/grading";
 
 export default function Mistakes() {
-  const answers = loadAnswers();
-  const wrong = useMemo(() => {
-    const out: { n: number; q: string; e: string; r?: string }[] = [];
-    for (const [mod, store] of Object.entries(answers)) {
-      if (!store._submitted) continue;
-      for (const q of allQuestions()) {
-        const a: Answer | undefined = store[q.id];
-        if (!a?.length) continue;
-        if (!gradeQuestion(q, a).correct) {
-          out.push({ n: q.number, q: q.question, e: q.explanation ?? "", r: q.reference });
-        }
-      }
+  const [, nav] = useLocation();
+  const [items, setItems] = useState(loadWrong);
+  const qMap = new Map(allQuestions().map((q) => [q.id, q]));
+
+  const del = (id: string) => {
+    removeWrong(id);
+    setItems(loadWrong());
+  };
+  const delAll = () => {
+    if (confirm("حذف كل الأسئلة الخاطئة من قائمة المراجعة؟")) {
+      clearWrong();
+      setItems([]);
     }
-    return out;
-  }, [answers]);
+  };
 
   return (
     <div>
       <TopBar>
         <Chip>📕 مراجعة الأخطاء</Chip>
-        <Chip cls="">{wrong.length} خطأ</Chip>
+        <Chip cls="">{items.length} سؤال</Chip>
       </TopBar>
-      <div style={{ maxWidth: "760px", margin: "0 auto", padding: "1.2rem 1rem 3rem", display: "grid", gap: "0.8rem" }}>
-        {wrong.length === 0 && (
-          <div className="card" style={{ textAlign: "center", color: "var(--mut)" }}>لا توجد أخطاء مسجلة بعد — أكمل امتحاناً أولاً.</div>
-        )}
-        {wrong.map((w, i) => (
-          <details key={i} className="card" style={{ borderColor: "rgba(248,113,113,0.4)" }}>
-            <summary style={{ display: "flex", gap: "0.6rem", cursor: "pointer", fontWeight: 700, fontSize: "0.93rem" }}>
-              <span style={{ flex: "none", background: "var(--red)", color: "#fff", borderRadius: "0.45rem", padding: "0.1rem 0.5rem", fontWeight: 800 }} className="num-ltr">{w.n}</span>
-              <span style={{ flex: 1 }}>{w.q}</span>
-            </summary>
-            <div style={{ paddingTop: "0.6rem", borderTop: "1px solid var(--line)", marginTop: "0.6rem", fontSize: "0.9rem", lineHeight: 1.8 }}>
-              {w.e && <div>{w.e}</div>}
-              {w.r && (
-                <div style={{ marginTop: "0.4rem" }}>
-                  <a href={w.r} target="_blank" rel="noreferrer" style={{ color: "var(--teal)" }}>المرجع: Microsoft Learn ↖</a>
-                </div>
-              )}
+
+      <div style={{ maxWidth: "760px", margin: "0 auto", padding: "1.2rem 1rem 3rem", display: "grid", gap: "0.9rem" }}>
+        {items.length === 0 ? (
+          <div className="card" style={{ textAlign: "center", padding: "2rem 1rem", color: "var(--mut)" }}>
+            <div style={{ fontSize: "2.2rem" }}>🎉</div>
+            <div style={{ fontWeight: 800, color: "var(--txt)", margin: "0.5rem 0 0.3rem" }}>لا توجد أسئلة خاطئة للمراجعة حالياً</div>
+            <div style={{ fontSize: "0.88rem" }}>كل سؤال تجيب عنه إجابةً خاطئة ويضغط «تحقق من الإجابة» يُحفظ هنا تلقائياً.</div>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+              <button className="btn btn-violet" style={{ flex: 1, minWidth: "200px" }} onClick={() => nav("/quiz/module-wrong")}>
+                ▶ بدء اختبار من الأسئلة الخاطئة فقط ({items.length})
+              </button>
+              <button className="btn btn-danger" onClick={delAll}>🗑 حذف الكل</button>
             </div>
-          </details>
-        ))}
+
+            {items.map((w) => {
+              const q = qMap.get(w.questionId);
+              if (!q) return null;
+              return (
+                <div key={w.questionId} className="card" style={{ borderColor: "rgba(248,113,113,0.4)", display: "grid", gap: "0.6rem" }}>
+                  <div style={{ display: "flex", gap: "0.6rem", alignItems: "flex-start" }}>
+                    <span className="num-ltr" style={{ flex: "none", background: "var(--red)", color: "#fff", borderRadius: "0.45rem", padding: "0.1rem 0.5rem", fontWeight: 800 }}>{q.number}</span>
+                    <div style={{ flex: 1, fontWeight: 700, lineHeight: 1.7 }}>{q.question}</div>
+                  </div>
+
+                  <div style={{ display: "grid", gap: "0.35rem", fontSize: "0.9rem" }}>
+                    <div style={{ color: "var(--red)" }}>
+                      <b>إجابتك:</b> {selectedAnswerText(q, w.selectedAnswer)}
+                    </div>
+                    <div style={{ color: "var(--green)" }}>
+                      <b>الإجابة الصحيحة:</b> {correctAnswerText(q)}
+                    </div>
+                    {q.explanation && (
+                      <div className="explanation" style={{ marginTop: "0.3rem", color: "inherit" }}>
+                        <strong>لماذا؟</strong>
+                        <p style={{ margin: "0.25rem 0 0", color: "#dbeafe" }}>{q.explanation}</p>
+                      </div>
+                    )}
+                    {q.reference && (
+                      <a href={q.reference} target="_blank" rel="noreferrer" style={{ color: "var(--teal)", fontSize: "0.85rem" }}>المرجع: Microsoft Learn ↖</a>
+                    )}
+                  </div>
+
+                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                    <button className="btn btn-ghost" style={{ fontSize: "0.85rem", padding: "0.4rem 0.9rem" }} onClick={() => nav(`/quiz/module-wrong?focus=${q.number}`)}>
+                      🔍 فتح السؤال مرة أخرى
+                    </button>
+                    <button className="btn btn-ghost" style={{ fontSize: "0.85rem", padding: "0.4rem 0.9rem", color: "var(--red)" }} onClick={() => del(w.questionId)}>
+                      ✕ حذف من المراجعة
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
       </div>
     </div>
   );

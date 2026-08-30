@@ -1855,7 +1855,7 @@ export const QUESTIONS: QuizQuestion[] = [
   "id": "q054",
   "number": 54,
   "category": "بيانات",
-  "question": "",
+  "question": "حدد صح أم خطأ (نعم/لا) لكل عبارة من العبارات التالية:",
   "explanation": "explain() يعرض خطة التنفيذ لا إحصاءات — استخدم summary()/describe().",
   "reference": "https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.summary.html",
   "images": [
@@ -1874,7 +1874,7 @@ export const QUESTIONS: QuizQuestion[] = [
   "id": "q055",
   "number": 55,
   "category": "بيانات",
-  "question": "",
+  "question": "حدد صح أم خطأ (نعم/لا) لكل عبارة من العبارات التالية:",
   "explanation": "show() يعرض الصفوف لا إحصاءات.",
   "reference": "https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.show.html",
   "images": [
@@ -1893,7 +1893,7 @@ export const QUESTIONS: QuizQuestion[] = [
   "id": "q056",
   "number": 56,
   "category": "بيانات",
-  "question": "",
+  "question": "حدد صح أم خطأ (نعم/لا) لكل عبارة من العبارات التالية:",
   "explanation": "summary() يعيد count/mean/stddev/min/max.",
   "reference": "https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/api/pyspark.sql.DataFrame.summary.html",
   "images": [
@@ -1912,7 +1912,7 @@ export const QUESTIONS: QuizQuestion[] = [
   "id": "q057",
   "number": 57,
   "category": "بيانات",
-  "question": "",
+  "question": "حدد صح أم خطأ (نعم/لا) لكل عبارة من العبارات التالية:",
   "explanation": "DESCRIBE HISTORY يعرض سجل العمليات.",
   "reference": "https://learn.microsoft.com/en-us/fabric/data-engineering/delta-table-history",
   "images": [
@@ -1931,7 +1931,7 @@ export const QUESTIONS: QuizQuestion[] = [
   "id": "q058",
   "number": 58,
   "category": "بيانات",
-  "question": "",
+  "question": "حدد صح أم خطأ (نعم/لا) لكل عبارة من العبارات التالية:",
   "explanation": "REFRESH TABLE يحدّث الميتاداتا لا سجل الصيانة.",
   "reference": "https://learn.microsoft.com/en-us/fabric/data-engineering/delta-table-history",
   "images": [
@@ -1950,7 +1950,7 @@ export const QUESTIONS: QuizQuestion[] = [
   "id": "q059",
   "number": 59,
   "category": "بيانات",
-  "question": "",
+  "question": "حدد صح أم خطأ (نعم/لا) لكل عبارة من العبارات التالية:",
   "explanation": "EXPLAIN TABLE يعرض خطة تنفيذ لا سجل صيانة.",
   "reference": "https://learn.microsoft.com/en-us/fabric/data-engineering/delta-table-history",
   "images": [
@@ -3684,7 +3684,7 @@ export const QUESTIONS: QuizQuestion[] = [
   "id": "q101",
   "number": 101,
   "category": "بيانات",
-  "question": "",
+  "question": "حدد صح أم خطأ (نعم/لا) لكل عبارة من العبارات التالية:",
   "explanation": "DESCRIBE DETAIL يعرض الحالة فقط — الصحيح HISTORY.",
   "reference": "https://learn.microsoft.com/en-us/fabric/data-engineering/delta-table-history",
   "images": [
