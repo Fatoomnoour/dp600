@@ -1,14 +1,8 @@
 // DP-600 automated tests — node --experimental-strip-types scripts/test.mjs
 let failures = 0;
 const t = (name, ok) => { if (!ok) { failures++; console.log("FAIL:", name); } else console.log("ok  :", name); };
-
-// localStorage mock (simulates persistence across refresh)
 const mem = {};
-globalThis.localStorage = {
-  getItem: (k) => (k in mem ? mem[k] : null),
-  setItem: (k, v) => { mem[k] = String(v); },
-  removeItem: (k) => { delete mem[k]; },
-};
+globalThis.localStorage = { getItem: (k) => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); }, removeItem: (k) => { delete mem[k]; } };
 
 const { QUESTIONS } = await import("../src/data/questions.ts");
 const L = await import("../src/lib/grading.ts");
@@ -21,87 +15,74 @@ const ddQ = QUESTIONS.find(q => q.type === "dragDrop");
 t("data: has all 4 types present", !!(singleQ && multiQ && yesQ && ddQ));
 
 /* --- single --- */
-const singleCorrectId = singleQ.correctAnswers[0];
-const singleWrongId = singleQ.options.find(o => o.id !== singleCorrectId).id;
-t("single: correct passes", L.isSingleCorrect(singleCorrectId, singleCorrectId));
-t("single: wrong fails", !L.isSingleCorrect(singleWrongId, singleCorrectId));
-t("single: grade correct", L.gradeQuestion(singleQ, [singleCorrectId]).correct === true);
-t("single: grade wrong", L.gradeQuestion(singleQ, [singleWrongId]).correct === false);
-t("single: empty answer not correct", L.gradeQuestion(singleQ, []).correct === false);
+const sc = singleQ.correctAnswers[0];
+const sw = singleQ.options.find(o => o.id !== sc).id;
+t("single: correct", L.isSingleCorrect(sc, sc));
+t("single: wrong", !L.isSingleCorrect(sw, sc));
+t("single: grade T", L.gradeQuestion(singleQ, [sc]).correct === true);
+t("single: grade F", L.gradeQuestion(singleQ, [sw]).correct === false);
+t("single: empty F", L.gradeQuestion(singleQ, []).correct === false);
 
-/* --- multiple: sorted exact match --- */
-t("multiple: exact (reversed order) passes", L.isMultipleCorrect([...multiQ.correctAnswers].reverse(), multiQ.correctAnswers));
-t("multiple: incomplete fails", !L.isMultipleCorrect(multiQ.correctAnswers.slice(0, -1), multiQ.correctAnswers));
-const extraId = multiQ.options.find(o => !multiQ.correctAnswers.includes(o.id)).id;
-t("multiple: correct+wrong extra fails", !L.isMultipleCorrect([...multiQ.correctAnswers, extraId], multiQ.correctAnswers));
-t("multiple: only wrong fails", !L.isMultipleCorrect([extraId], multiQ.correctAnswers));
-t("multiple: empty fails", !L.isMultipleCorrect([], multiQ.correctAnswers));
+/* --- multiple --- */
+t("multiple: exact reversed", L.isMultipleCorrect([...multiQ.correctAnswers].reverse(), multiQ.correctAnswers));
+t("multiple: incomplete F", !L.isMultipleCorrect(multiQ.correctAnswers.slice(0, -1), multiQ.correctAnswers));
+const extra = multiQ.options.find(o => !multiQ.correctAnswers.includes(o.id)).id;
+t("multiple: extra F", !L.isMultipleCorrect([...multiQ.correctAnswers, extra], multiQ.correctAnswers));
+t("multiple: only wrong F", !L.isMultipleCorrect([extra], multiQ.correctAnswers));
+t("multiple: empty F", !L.isMultipleCorrect([], multiQ.correctAnswers));
 
 /* --- yesNo --- */
-const yesCorr = {};
-yesQ.statements.forEach(s => { yesCorr[s.id] = s.correctAnswer; });
-t("yesNo: all correct passes", L.isYesNoCorrect({ ...yesCorr }, yesCorr));
-const bad = { ...yesCorr };
-const k0 = Object.keys(bad)[0];
-bad[k0] = bad[k0] === "Yes" ? "No" : "Yes";
-t("yesNo: one wrong fails", !L.isYesNoCorrect(bad, yesCorr));
+const yc = {}; yesQ.statements.forEach(s => { yc[s.id] = s.correctAnswer; });
+t("yesNo: all ok", L.isYesNoCorrect({ ...yc }, yc));
+const bad = { ...yc }; const k0 = Object.keys(bad)[0]; bad[k0] = bad[k0] === "Yes" ? "No" : "Yes";
+t("yesNo: one wrong F", !L.isYesNoCorrect(bad, yc));
 
-/* --- hotspot (unit fn; data bank has none by design) --- */
-t("hotspot: right zone passes", L.isHotspotCorrect("zoneA", "zoneA"));
-t("hotspot: wrong zone fails", !L.isHotspotCorrect("zoneB", "zoneA"));
+/* --- hotspot fn --- */
+t("hotspot: ok", L.isHotspotCorrect("A", "A"));
+t("hotspot: wrong", !L.isHotspotCorrect("B", "A"));
 
 /* --- dragDrop --- */
-const ddCorr = ddQ.dragCorrect;
-const ddOk = {};
-Object.keys(ddCorr).forEach(z => { ddOk[z] = ddCorr[z]; });
-t("dragDrop: all correct passes", L.isDragDropCorrect(ddOk, ddCorr));
-const ddBad = { ...ddOk };
-const z0 = Object.keys(ddBad)[0];
-const otherItem = ddQ.dragItems.find(d => d.id !== ddBad[z0]).id;
-ddBad[z0] = otherItem;
-t("dragDrop: one wrong fails", !L.isDragDropCorrect(ddBad, ddCorr));
+const dc = ddQ.dragCorrect; const okk = {}; Object.keys(dc).forEach(z => { okk[z] = dc[z]; });
+t("dragdrop: all ok", L.isDragDropCorrect(okk, dc));
+const db = { ...okk }; const z0 = Object.keys(db)[0];
+db[z0] = ddQ.dragItems.find(d => d.id !== db[z0]).id;
+t("dragdrop: one wrong F", !L.isDragDropCorrect(db, dc));
 
-/* --- wrong-answers storage: save once, dedupe, refresh, delete --- */
+/* --- wrong answers: save once/dedupe/refresh/delete + rich fields --- */
 S.clearWrong();
-S.addWrong({ questionId: "q001", selectedAnswer: ["A"], correctAnswer: ["B"] });
-S.addWrong({ questionId: "q001", selectedAnswer: ["A"], correctAnswer: ["B"] }); // duplicate
-S.addWrong({ questionId: "q002", selectedAnswer: ["C"], correctAnswer: ["D"] });
-t("wrong: two distinct saved", S.loadWrong().length === 2);
-t("wrong: dedupe works (q001 once)", S.loadWrong().filter(w => w.questionId === "q001").length === 1);
-// simulate refresh (reload from same localStorage mock)
+S.addWrong({ questionId: "q001", questionNumber: 1, sourcePages: [4], type: "single", selectedAnswer: ["A"], correctAnswer: ["B"], questionImages: ["/dp600/a.png"], explanation: "why" });
+S.addWrong({ questionId: "q001", questionNumber: 1, sourcePages: [4], type: "single", selectedAnswer: ["A"], correctAnswer: ["B"], questionImages: ["/dp600/a.png"], explanation: "why" });
+S.addWrong({ questionId: "q002", questionNumber: 2, sourcePages: [5, 6], type: "multiple", selectedAnswer: ["C"], correctAnswer: ["D","E"], questionImages: ["/dp600/b.png"], explanation: "why2" });
+t("wrong: two distinct", S.loadWrong().length === 2);
+t("wrong: dedupe", S.loadWrong().filter(w => w.questionId === "q001").length === 1);
 const afterRefresh = JSON.parse(localStorage.getItem("dp600_wrong_answers") || "[]");
-t("wrong: survives refresh (localStorage)", afterRefresh.length === 2 && afterRefresh[0].questionId === "q001");
-t("wrong: only saved after check (no stray entries)", afterRefresh.every(w => w.attemptedAt && w.selectedAnswer && w.correctAnswer));
+t("wrong: survives refresh", afterRefresh.length === 2);
+t("wrong: rich fields + createdAt", afterRefresh.every(w => w.createdAt && w.questionNumber && w.sourcePages && w.explanation && w.questionImages));
 S.removeWrong("q001");
-t("wrong: delete one works", S.loadWrong().length === 1 && S.loadWrong()[0].questionId === "q002");
+t("wrong: delete one", S.loadWrong().length === 1 && S.loadWrong()[0].questionId === "q002");
 S.clearWrong();
-t("wrong: delete all works", S.loadWrong().length === 0);
+t("wrong: delete all", S.loadWrong().length === 0);
 
-/* --- mode persistence --- */
-S.saveMode("training");
-t("mode: persists training", S.loadMode() === "training");
-S.saveMode("exam");
-t("mode: persists exam", S.loadMode() === "exam");
+/* --- mode --- */
+S.saveMode("training"); t("mode training", S.loadMode() === "training");
+S.saveMode("exam"); t("mode exam", S.loadMode() === "exam");
 
-/* --- data integrity --- */
-t("data: 102 questions", QUESTIONS.length === 102);
-t("data: ids unique", new Set(QUESTIONS.map(q => q.id)).size === 102);
-t("data: no empty question text", QUESTIONS.every(q => q.question && q.question.trim().length > 0));
-t("data: every question has correct info", QUESTIONS.every(q => (q.correctAnswers && q.correctAnswers.length) || (q.statements && q.statements.length) || (q.dragCorrect && Object.keys(q.dragCorrect).length)));
-t("data: every question has explanation", QUESTIONS.every(q => q.explanation && q.explanation.trim().length > 0));
-t("data: no dp-900 content", !JSON.stringify(QUESTIONS).toLowerCase().includes("dp-900"));
-t("data: no duplicate option texts per question", QUESTIONS.every(q => { const txts = (q.options || []).map(o => o.text); return new Set(txts).size === txts.length; }));
+/* --- bank integrity --- */
+const fs = await import("fs");
+t("bank: 102", QUESTIONS.length === 102);
+t("bank: ids unique", new Set(QUESTIONS.map(q => q.id)).size === 102);
+t("bank: sourcePages present", QUESTIONS.every(q => q.sourcePages && q.sourcePages.length > 0));
+t("bank: images present", QUESTIONS.every(q => q.images && q.images.length > 0));
+t("bank: images exist on disk", QUESTIONS.every(q => q.images.every(p => fs.existsSync("public" + p.replace("/dp600", "")))));
+t("bank: no empty text", QUESTIONS.every(q => q.question && q.question.trim().length > 0));
+t("bank: correct info", QUESTIONS.every(q => (q.correctAnswers && q.correctAnswers.length) || (q.statements && q.statements.length) || (q.dragCorrect && Object.keys(q.dragCorrect).length)));
+t("bank: explanations", QUESTIONS.every(q => q.explanation && q.explanation.trim().length > 0));
+t("bank: no dp-900", !JSON.stringify(QUESTIONS).toLowerCase().includes("dp-900"));
+t("bank: no dup options", QUESTIONS.every(q => { const txts = (q.options || []).map(o => o.text); return new Set(txts).size === txts.length; }));
+const idx = JSON.parse(fs.readFileSync("public/question-index.json", "utf8"));
+t("bank: index 102", idx.length === 102);
+t("bank: index ids unique", new Set(idx.map(e => e.id)).size === 102);
+t("bank: index aligns", idx.every(e => { const q = QUESTIONS.find(x => x.id === e.id); return q && JSON.stringify(q.sourcePages) === JSON.stringify(e.sourcePages); }));
 
 console.log("\n" + (failures === 0 ? "ALL TESTS PASSED" : failures + " TEST(S) FAILED"));
 process.exit(failures === 0 ? 0 : 1);
-// --- visual bank integrity ---
-const fs = await import("fs");
-t("bank: every q has sourcePages", QUESTIONS.every(q => q.sourcePages && q.sourcePages.length > 0));
-t("bank: every q has cropped images", QUESTIONS.every(q => q.images && q.images.length > 0));
-t("bank: images exist on disk", QUESTIONS.every(q => q.images.every(p => fs.existsSync("public/" + p.replace("/dp600/", "")))));
-const idx = JSON.parse(fs.readFileSync("public/question-index.json", "utf8"));
-t("bank: index has 102 entries", idx.length === 102);
-t("bank: index ids unique", new Set(idx.map(e => e.id)).size === 102);
-t("bank: index aligns with data", idx.every(e => { const q = QUESTIONS.find(x => x.id === e.id); return q && JSON.stringify(q.sourcePages) === JSON.stringify(e.sourcePages); }));
-t("wrong: rich fields saved", (() => { clearWrong(); addWrong({ questionId: "qX", questionNumber: 10, sourcePages: [12,13], type: "multiple", selectedAnswer: ["a"], correctAnswer: ["b"], questionImages: ["/dp600/x.png"], explanation: "why" }); const w = loadWrong()[0]; return w && w.questionNumber === 10 && w.sourcePages.length === 2 && w.explanation === "why" && !!w.createdAt; })());
-clearWrong();
