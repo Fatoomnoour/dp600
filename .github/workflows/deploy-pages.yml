@@ -32,12 +32,13 @@ jobs:
           BASE_PATH: /dp600/
         run: npm run build
 
-      - name: SPA fallback + deep route files (direct-open support)
+      - name: SPA fallback + real deep-route files (direct open, no 404)
         run: |
           cp dist/index.html dist/404.html
           for p in quiz/module-full quiz/module-quick results/module-full results/module-quick; do
             mkdir -p "dist/$p"
-            cp dist/index.html "dist/$p/index.html"
+            cp dist/index.html "dist/$p"                 # extensionless file -> serves /quiz/module-full
+            cp dist/index.html "dist/$p/index.html"      # serves /quiz/module-full/ (trailing slash)
           done
 
       - name: Configure GitHub Pages

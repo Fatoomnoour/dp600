@@ -80,7 +80,7 @@ export default function Results() {
         {/* per-question review */}
         <div style={{ display: "grid", gap: "0.7rem" }}>
           {questions.map((q: QuizQuestion) => {
-            const a = answers[q.id] ?? [];
+            const a = (answers[q.id] ?? []) as Answer[];
             const g = gradeQuestion(q, a);
             const correct = g.correct;
             return (
